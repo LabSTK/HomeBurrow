@@ -14,6 +14,13 @@ from app.schemas.user import (
     UpdateUserRequest,
     UserResponse,
 )
+from app.schemas.group import (
+    AddGroupMemberRequest,
+    GroupDetailResponse,
+    GroupMemberResponse,
+    GroupSummaryResponse,
+    CreateGroupRequest,
+)
 
 __all__ = [
     "ErrorResponse",
@@ -27,6 +34,11 @@ __all__ = [
     "ResetPasswordResponse",
     "UpdateUserRequest",
     "UserResponse",
+    "CreateGroupRequest",
+    "GroupSummaryResponse",
+    "GroupDetailResponse",
+    "GroupMemberResponse",
+    "AddGroupMemberRequest",
 ]
 
 

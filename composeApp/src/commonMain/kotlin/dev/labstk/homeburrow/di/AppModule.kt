@@ -3,6 +3,8 @@ package dev.labstk.homeburrow.di
 import dev.labstk.homeburrow.auth.AuthRepository
 import dev.labstk.homeburrow.auth.AuthViewModel
 import dev.labstk.homeburrow.auth.TokenStorage
+import dev.labstk.homeburrow.groups.GroupsRepository
+import dev.labstk.homeburrow.groups.GroupsViewModel
 import dev.labstk.homeburrow.network.createHttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 
@@ -32,5 +34,12 @@ class AppModule(
     val authViewModel by lazy {
         AuthViewModel(authRepository, tokenStorage)
     }
-}
 
+    val groupsRepository by lazy {
+        GroupsRepository(httpClient)
+    }
+
+    val groupsViewModel by lazy {
+        GroupsViewModel(groupsRepository)
+    }
+}

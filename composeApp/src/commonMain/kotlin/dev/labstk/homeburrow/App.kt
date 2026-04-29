@@ -1,7 +1,6 @@
 package dev.labstk.homeburrow
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -9,6 +8,7 @@ import dev.labstk.homeburrow.auth.AuthState
 import dev.labstk.homeburrow.auth.ChangePasswordScreen
 import dev.labstk.homeburrow.auth.LoginScreen
 import dev.labstk.homeburrow.di.AppModule
+import dev.labstk.homeburrow.groups.GroupsScreen
 
 @Composable
 fun App(appModule: AppModule) {
@@ -22,7 +22,14 @@ fun App(appModule: AppModule) {
             is AuthState.MustChangePassword -> ChangePasswordScreen(viewModel)
             is AuthState.LoggedIn -> {
                 val user = (state as AuthState.LoggedIn).user
-                Text("Logged in as ${user.displayName}")
+                GroupsScreen(
+                    viewModel = appModule.groupsViewModel,
+                    currentUserIsAdmin = user.isAdmin,
+                    onLogout = {
+                        appModule.groupsViewModel.resetState()
+                        viewModel.logout()
+                    },
+                )
             }
         }
     }
