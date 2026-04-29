@@ -4,3 +4,7 @@
 # POST /auth/logout
 # GET  /auth/me
 # POST /auth/change-password
+
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/auth", tags=["auth"])

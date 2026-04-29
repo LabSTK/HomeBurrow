@@ -2,3 +2,7 @@
 # POST /groups/{group_id}/locations/current
 # GET  /groups/{group_id}/locations/current
 # PUT  /groups/{group_id}/me/location-sharing
+
+from fastapi import APIRouter
+
+router = APIRouter(tags=["locations"])

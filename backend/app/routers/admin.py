@@ -3,3 +3,7 @@
 # GET    /admin/users
 # PATCH  /admin/users/{user_id}
 # POST   /admin/users/{user_id}/reset-password
+
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/admin", tags=["admin"])
