@@ -17,6 +17,7 @@ data class GroupsUiState(
     val groups: List<GroupSummaryResponse> = emptyList(),
     val selectedGroup: GroupDetailResponse? = null,
     val members: List<GroupMemberResponse> = emptyList(),
+    val isLocationsOpen: Boolean = false,
     val error: String? = null,
     val info: String? = null,
 )
@@ -87,6 +88,7 @@ class GroupsViewModel(
                         isLoading = false,
                         selectedGroup = group,
                         members = members,
+                        isLocationsOpen = false,
                         error = null,
                     )
                 },
@@ -101,7 +103,23 @@ class GroupsViewModel(
     }
 
     fun closeGroup() {
-        _state.value = _state.value.copy(selectedGroup = null, members = emptyList(), error = null, info = null)
+        _state.value = _state.value.copy(
+            selectedGroup = null,
+            members = emptyList(),
+            isLocationsOpen = false,
+            error = null,
+            info = null,
+        )
+    }
+
+    fun openLocations() {
+        if (_state.value.selectedGroup != null) {
+            _state.value = _state.value.copy(isLocationsOpen = true, error = null, info = null)
+        }
+    }
+
+    fun closeLocations() {
+        _state.value = _state.value.copy(isLocationsOpen = false, error = null, info = null)
     }
 
     fun addMember(userId: String, role: String) {
@@ -169,13 +187,14 @@ class GroupsViewModel(
         }
         fetchGroupAndMembers(groupId).fold(
             onSuccess = { (group, members) ->
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    selectedGroup = group,
-                    members = members,
-                    error = null,
-                )
-            },
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        selectedGroup = group,
+                        members = members,
+                        isLocationsOpen = _state.value.isLocationsOpen,
+                        error = null,
+                    )
+                },
             onFailure = { error ->
                 _state.value = _state.value.copy(
                     isLoading = false,

@@ -16,10 +16,16 @@ from app.schemas.user import (
 )
 from app.schemas.group import (
     AddGroupMemberRequest,
+    CreateGroupRequest,
     GroupDetailResponse,
     GroupMemberResponse,
     GroupSummaryResponse,
-    CreateGroupRequest,
+)
+from app.schemas.location import (
+    CurrentLocationResponse,
+    LocationSharingResponse,
+    PostCurrentLocationRequest,
+    SetLocationSharingRequest,
 )
 
 __all__ = [
@@ -39,6 +45,10 @@ __all__ = [
     "GroupDetailResponse",
     "GroupMemberResponse",
     "AddGroupMemberRequest",
+    "PostCurrentLocationRequest",
+    "CurrentLocationResponse",
+    "SetLocationSharingRequest",
+    "LocationSharingResponse",
 ]
 
 

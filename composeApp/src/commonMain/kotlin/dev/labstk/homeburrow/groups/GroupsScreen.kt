@@ -28,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.labstk.homeburrow.locations.LocationsScreen
+import dev.labstk.homeburrow.locations.LocationsViewModel
 import dev.labstk.homeburrow.network.models.GroupDetailResponse
 import dev.labstk.homeburrow.network.models.GroupMemberResponse
 import dev.labstk.homeburrow.network.models.GroupSummaryResponse
@@ -35,6 +37,7 @@ import dev.labstk.homeburrow.network.models.GroupSummaryResponse
 @Composable
 fun GroupsScreen(
     viewModel: GroupsViewModel,
+    locationsViewModel: LocationsViewModel,
     currentUserIsAdmin: Boolean,
     onLogout: () -> Unit,
 ) {
@@ -66,19 +69,29 @@ fun GroupsScreen(
                 },
             )
 
-            else -> GroupDetailContent(
-                group = selected,
-                members = state.members,
-                isLoading = state.isLoading,
-                error = state.error,
-                info = state.info,
-                canManageMembers = currentUserIsAdmin || selected.myRole == "owner",
-                onBack = { viewModel.closeGroup() },
-                onRefresh = { viewModel.openGroup(selected.id) },
-                onAddMember = { userId, role -> viewModel.addMember(userId, role) },
-                onRemoveMember = { userId -> viewModel.removeMember(userId) },
-                onDismissMessage = { viewModel.clearMessages() },
-            )
+            else -> if (state.isLocationsOpen) {
+                LocationsScreen(
+                    group = selected,
+                    members = state.members,
+                    viewModel = locationsViewModel,
+                    onBack = { viewModel.closeLocations() },
+                )
+            } else {
+                GroupDetailContent(
+                    group = selected,
+                    members = state.members,
+                    isLoading = state.isLoading,
+                    error = state.error,
+                    info = state.info,
+                    canManageMembers = currentUserIsAdmin || selected.myRole == "owner",
+                    onBack = { viewModel.closeGroup() },
+                    onRefresh = { viewModel.openGroup(selected.id) },
+                    onOpenLocations = { viewModel.openLocations() },
+                    onAddMember = { userId, role -> viewModel.addMember(userId, role) },
+                    onRemoveMember = { userId -> viewModel.removeMember(userId) },
+                    onDismissMessage = { viewModel.clearMessages() },
+                )
+            }
         }
     }
 }
@@ -195,6 +208,7 @@ private fun GroupDetailContent(
     canManageMembers: Boolean,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
+    onOpenLocations: () -> Unit,
     onAddMember: (String, String) -> Unit,
     onRemoveMember: (String) -> Unit,
     onDismissMessage: () -> Unit,
@@ -222,6 +236,11 @@ private fun GroupDetailContent(
 
         Text(group.name, style = MaterialTheme.typography.headlineSmall)
         Text("My role: ${group.myRole}", style = MaterialTheme.typography.bodyMedium)
+
+        Spacer(Modifier.height(8.dp))
+        Button(onClick = onOpenLocations, enabled = !isLoading) {
+            Text("Locations")
+        }
 
         Spacer(Modifier.height(10.dp))
         if (isLoading) {

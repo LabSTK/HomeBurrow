@@ -24,9 +24,11 @@ fun App(appModule: AppModule) {
                 val user = (state as AuthState.LoggedIn).user
                 GroupsScreen(
                     viewModel = appModule.groupsViewModel,
+                    locationsViewModel = appModule.locationsViewModel,
                     currentUserIsAdmin = user.isAdmin,
                     onLogout = {
                         appModule.groupsViewModel.resetState()
+                        appModule.locationsViewModel.resetState()
                         viewModel.logout()
                     },
                 )

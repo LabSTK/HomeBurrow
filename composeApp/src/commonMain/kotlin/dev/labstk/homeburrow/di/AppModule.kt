@@ -5,6 +5,10 @@ import dev.labstk.homeburrow.auth.AuthViewModel
 import dev.labstk.homeburrow.auth.TokenStorage
 import dev.labstk.homeburrow.groups.GroupsRepository
 import dev.labstk.homeburrow.groups.GroupsViewModel
+import dev.labstk.homeburrow.locations.DeviceLocationProvider
+import dev.labstk.homeburrow.locations.LocationsRepository
+import dev.labstk.homeburrow.locations.LocationsViewModel
+import dev.labstk.homeburrow.locations.MapLauncher
 import dev.labstk.homeburrow.network.createHttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 
@@ -22,6 +26,8 @@ class AppModule(
     private val baseUrl: String,
     private val engineFactory: HttpClientEngineFactory<*>,
     val tokenStorage: TokenStorage,
+    private val deviceLocationProvider: DeviceLocationProvider,
+    private val mapLauncher: MapLauncher,
 ) {
     val httpClient by lazy {
         createHttpClient(baseUrl, engineFactory, tokenStorage)
@@ -41,5 +47,13 @@ class AppModule(
 
     val groupsViewModel by lazy {
         GroupsViewModel(groupsRepository)
+    }
+
+    val locationsRepository by lazy {
+        LocationsRepository(httpClient)
+    }
+
+    val locationsViewModel by lazy {
+        LocationsViewModel(locationsRepository, deviceLocationProvider, mapLauncher)
     }
 }
