@@ -15,7 +15,7 @@ import io.ktor.client.engine.HttpClientEngineFactory
 /**
  * Central manual dependency injection container.
  *
- * Platform-specific entry points (Android [MainActivity], iOS [MainViewController])
+ * Platform-specific entry points (Android `MainActivity`, iOS `MainViewController`)
  * create a single [AppModule] instance and pass it into the composition tree.
  *
  * @param baseUrl        Base URL of the HomeBurrow API.

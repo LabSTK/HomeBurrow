@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -79,7 +80,7 @@ fun App(appModule: AppModule) {
                 arguments = listOf(navArgument(GroupRoutes.groupIdArg) { type = NavType.StringType }),
             ) { entry ->
                 val user = (authState as? AuthState.LoggedIn)?.user ?: return@composable
-                val groupId = entry.arguments?.getString(GroupRoutes.groupIdArg) ?: return@composable
+                val groupId = entry.stringArg(GroupRoutes.groupIdArg) ?: return@composable
                 GroupDetailRoute(
                     viewModel = appModule.groupsViewModel,
                     groupId = groupId,
@@ -101,7 +102,7 @@ fun App(appModule: AppModule) {
                 route = GroupRoutes.locations,
                 arguments = listOf(navArgument(GroupRoutes.groupIdArg) { type = NavType.StringType }),
             ) { entry ->
-                val groupId = entry.arguments?.getString(GroupRoutes.groupIdArg) ?: return@composable
+                val groupId = entry.stringArg(GroupRoutes.groupIdArg) ?: return@composable
                 GroupLocationsRoute(
                     viewModel = appModule.groupsViewModel,
                     locationsViewModel = appModule.locationsViewModel,
@@ -114,7 +115,7 @@ fun App(appModule: AppModule) {
                 route = GroupRoutes.chat,
                 arguments = listOf(navArgument(GroupRoutes.groupIdArg) { type = NavType.StringType }),
             ) { entry ->
-                val groupId = entry.arguments?.getString(GroupRoutes.groupIdArg) ?: return@composable
+                val groupId = entry.stringArg(GroupRoutes.groupIdArg) ?: return@composable
                 GroupFeaturePlaceholderScreen(
                     title = "Chat",
                     groupId = groupId,
@@ -126,7 +127,7 @@ fun App(appModule: AppModule) {
                 route = GroupRoutes.files,
                 arguments = listOf(navArgument(GroupRoutes.groupIdArg) { type = NavType.StringType }),
             ) { entry ->
-                val groupId = entry.arguments?.getString(GroupRoutes.groupIdArg) ?: return@composable
+                val groupId = entry.stringArg(GroupRoutes.groupIdArg) ?: return@composable
                 GroupFeaturePlaceholderScreen(
                     title = "Files",
                     groupId = groupId,
@@ -170,6 +171,11 @@ fun App(appModule: AppModule) {
             }
         }
     }
+}
+
+private fun NavBackStackEntry.stringArg(name: String): String? {
+    val args = arguments ?: return null
+    return NavType.StringType[args, name]
 }
 
 @Composable
@@ -217,4 +223,3 @@ private fun SettingsPlaceholderScreen(
         }
     }
 }
-

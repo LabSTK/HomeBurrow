@@ -1,14 +1,12 @@
 package dev.labstk.homeburrow.locations
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.util.function.Consumer
 import kotlin.coroutines.resume
 
 class AndroidDeviceLocationProvider(
@@ -16,9 +14,7 @@ class AndroidDeviceLocationProvider(
 ) : DeviceLocationProvider {
 
     override suspend fun getCurrentLocation(): Result<DeviceLocation> {
-        val hasFine = context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val hasCoarse = context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!hasFine && !hasCoarse) {
+        if (!context.hasLocationPermission()) {
             return Result.failure(IllegalStateException("Location permission is required."))
         }
 
@@ -44,7 +40,7 @@ class AndroidDeviceLocationProvider(
                     ),
                 )
             }
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             Result.failure(IllegalStateException("Location permission is required."))
         } catch (e: Exception) {
             Result.failure(e)
@@ -55,18 +51,53 @@ class AndroidDeviceLocationProvider(
         locationManager: LocationManager,
         provider: String,
     ): Location? = suspendCancellableCoroutine { continuation ->
+        if (!context.hasLocationPermission()) {
+            continuation.resume(null)
+            return@suspendCancellableCoroutine
+        }
+
         val cancellationSignal = CancellationSignal()
         continuation.invokeOnCancellation { cancellationSignal.cancel() }
 
-        locationManager.getCurrentLocation(
-            provider,
-            cancellationSignal,
-            ContextCompat.getMainExecutor(context),
-            Consumer { location ->
+        requestCurrentLocation(
+            locationManager = locationManager,
+            provider = provider,
+            cancellationSignal = cancellationSignal,
+            onLocation = { location ->
                 if (continuation.isActive) {
                     continuation.resume(location)
                 }
             },
+            onDenied = {
+                if (continuation.isActive) {
+                    continuation.resume(null)
+                }
+            },
         )
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestCurrentLocation(
+        locationManager: LocationManager,
+        provider: String,
+        cancellationSignal: CancellationSignal,
+        onLocation: (Location?) -> Unit,
+        onDenied: () -> Unit,
+    ) {
+        if (!context.hasLocationPermission()) {
+            onDenied()
+            return
+        }
+
+        try {
+            locationManager.getCurrentLocation(
+                provider,
+                cancellationSignal,
+                ContextCompat.getMainExecutor(context),
+                { location -> onLocation(location) },
+            )
+        } catch (_: SecurityException) {
+            onDenied()
+        }
     }
 }
