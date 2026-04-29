@@ -57,6 +57,11 @@ HomeBurrow/
 
 ## Backend conventions
 
+### Dependency pinning
+- Always pin Python dependencies to **exact versions** using `==` in `requirements.txt` — never use `>=`, `~=`, or unpinned specifiers
+- When adding a new dependency, install it and record the exact installed version from `pip freeze`
+- This applies to all extras too (e.g., `fastapi==x.y.z`, not `fastapi>=x.y.z`)
+
 ### Async everywhere
 - All database operations use `AsyncSession` from `app/database.py`
 - All service/repository functions are `async def`
