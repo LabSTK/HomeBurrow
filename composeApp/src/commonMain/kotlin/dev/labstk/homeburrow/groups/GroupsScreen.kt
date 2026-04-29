@@ -35,10 +35,11 @@ import dev.labstk.homeburrow.network.models.GroupMemberResponse
 import dev.labstk.homeburrow.network.models.GroupSummaryResponse
 
 @Composable
-fun GroupsScreen(
+fun GroupsListRoute(
     viewModel: GroupsViewModel,
-    locationsViewModel: LocationsViewModel,
     currentUserIsAdmin: Boolean,
+    onOpenGroup: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -47,50 +48,145 @@ fun GroupsScreen(
         viewModel.loadGroups()
     }
 
+    GroupListContent(
+        groups = state.groups,
+        isLoading = state.isLoading,
+        error = state.error,
+        info = state.info,
+        canCreateGroups = currentUserIsAdmin,
+        onRefresh = { viewModel.loadGroups() },
+        onCreateGroup = { name -> viewModel.createGroup(name, onCreated = onOpenGroup) },
+        onOpenGroup = onOpenGroup,
+        onDismissMessage = { viewModel.clearMessages() },
+        onOpenSettings = onOpenSettings,
+        onLogout = {
+            viewModel.resetState()
+            onLogout()
+        },
+    )
+}
+
+@Composable
+fun GroupDetailRoute(
+    viewModel: GroupsViewModel,
+    groupId: String,
+    currentUserIsAdmin: Boolean,
+    onBack: () -> Unit,
+    onOpenLocations: (String) -> Unit,
+    onOpenChat: (String) -> Unit,
+    onOpenFiles: (String) -> Unit,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val group = state.groupDetailsById[groupId]
+    val members = state.groupMembersByGroupId[groupId].orEmpty()
+
+    LaunchedEffect(viewModel, groupId) {
+        viewModel.loadGroup(groupId)
+    }
+
+    if (group == null) {
+        GroupUnavailableContent(
+            title = "Group",
+            isLoading = state.isLoading,
+            error = state.error,
+            onBack = onBack,
+            onRefresh = { viewModel.loadGroup(groupId) },
+            onDismissMessage = { viewModel.clearMessages() },
+        )
+        return
+    }
+
+    GroupDetailContent(
+        group = group,
+        members = members,
+        isLoading = state.isLoading,
+        error = state.error,
+        info = state.info,
+        canManageMembers = currentUserIsAdmin || group.myRole == "owner",
+        onBack = onBack,
+        onRefresh = { viewModel.loadGroup(groupId) },
+        onOpenLocations = { onOpenLocations(groupId) },
+        onOpenChat = { onOpenChat(groupId) },
+        onOpenFiles = { onOpenFiles(groupId) },
+        onAddMember = { userId, role -> viewModel.addMember(groupId, userId, role) },
+        onRemoveMember = { userId -> viewModel.removeMember(groupId, userId) },
+        onDismissMessage = { viewModel.clearMessages() },
+    )
+}
+
+@Composable
+fun GroupLocationsRoute(
+    viewModel: GroupsViewModel,
+    locationsViewModel: LocationsViewModel,
+    groupId: String,
+    onBack: () -> Unit,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val group = state.groupDetailsById[groupId]
+    val members = state.groupMembersByGroupId[groupId].orEmpty()
+
+    LaunchedEffect(viewModel, groupId) {
+        viewModel.loadGroup(groupId)
+    }
+
+    if (group == null) {
+        GroupUnavailableContent(
+            title = "Locations",
+            isLoading = state.isLoading,
+            error = state.error,
+            onBack = onBack,
+            onRefresh = { viewModel.loadGroup(groupId) },
+            onDismissMessage = { viewModel.clearMessages() },
+        )
+        return
+    }
+
+    LocationsScreen(
+        group = group,
+        members = members,
+        viewModel = locationsViewModel,
+        onBack = onBack,
+    )
+}
+
+@Composable
+private fun GroupUnavailableContent(
+    title: String,
+    isLoading: Boolean,
+    error: String?,
+    onBack: () -> Unit,
+    onRefresh: () -> Unit,
+    onDismissMessage: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        when (val selected = state.selectedGroup) {
-            null -> GroupListContent(
-                groups = state.groups,
-                isLoading = state.isLoading,
-                error = state.error,
-                info = state.info,
-                canCreateGroups = currentUserIsAdmin,
-                onRefresh = { viewModel.loadGroups() },
-                onCreateGroup = { viewModel.createGroup(it) },
-                onOpenGroup = { viewModel.openGroup(it) },
-                onDismissMessage = { viewModel.clearMessages() },
-                onLogout = {
-                    viewModel.resetState()
-                    onLogout()
-                },
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = onBack) {
+                Text("Back")
+            }
+            TextButton(onClick = onRefresh, enabled = !isLoading) {
+                Text("Refresh")
+            }
+        }
 
-            else -> if (state.isLocationsOpen) {
-                LocationsScreen(
-                    group = selected,
-                    members = state.members,
-                    viewModel = locationsViewModel,
-                    onBack = { viewModel.closeLocations() },
-                )
-            } else {
-                GroupDetailContent(
-                    group = selected,
-                    members = state.members,
-                    isLoading = state.isLoading,
-                    error = state.error,
-                    info = state.info,
-                    canManageMembers = currentUserIsAdmin || selected.myRole == "owner",
-                    onBack = { viewModel.closeGroup() },
-                    onRefresh = { viewModel.openGroup(selected.id) },
-                    onOpenLocations = { viewModel.openLocations() },
-                    onAddMember = { userId, role -> viewModel.addMember(userId, role) },
-                    onRemoveMember = { userId -> viewModel.removeMember(userId) },
-                    onDismissMessage = { viewModel.clearMessages() },
-                )
+        Text("$title unavailable right now.", style = MaterialTheme.typography.titleMedium)
+
+        if (isLoading) {
+            CircularProgressIndicator()
+        }
+
+        error?.let {
+            Text(it, color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = onDismissMessage) {
+                Text("Dismiss")
             }
         }
     }
@@ -107,6 +203,7 @@ private fun GroupListContent(
     onCreateGroup: (String) -> Unit,
     onOpenGroup: (String) -> Unit,
     onDismissMessage: () -> Unit,
+    onOpenSettings: () -> Unit,
     onLogout: () -> Unit,
 ) {
     var newGroupName by remember { mutableStateOf("") }
@@ -125,6 +222,9 @@ private fun GroupListContent(
             Row {
                 TextButton(onClick = onRefresh, enabled = !isLoading) {
                     Text("Refresh")
+                }
+                TextButton(onClick = onOpenSettings) {
+                    Text("Settings")
                 }
                 TextButton(onClick = onLogout) {
                     Text("Logout")
@@ -209,6 +309,8 @@ private fun GroupDetailContent(
     onBack: () -> Unit,
     onRefresh: () -> Unit,
     onOpenLocations: () -> Unit,
+    onOpenChat: () -> Unit,
+    onOpenFiles: () -> Unit,
     onAddMember: (String, String) -> Unit,
     onRemoveMember: (String) -> Unit,
     onDismissMessage: () -> Unit,
@@ -238,8 +340,18 @@ private fun GroupDetailContent(
         Text("My role: ${group.myRole}", style = MaterialTheme.typography.bodyMedium)
 
         Spacer(Modifier.height(8.dp))
-        Button(onClick = onOpenLocations, enabled = !isLoading) {
-            Text("Locations")
+        Row {
+            Button(onClick = onOpenLocations, enabled = !isLoading) {
+                Text("Locations")
+            }
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = onOpenChat, enabled = !isLoading) {
+                Text("Chat")
+            }
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = onOpenFiles, enabled = !isLoading) {
+                Text("Files")
+            }
         }
 
         Spacer(Modifier.height(10.dp))
@@ -331,3 +443,4 @@ private fun GroupDetailContent(
         }
     }
 }
+

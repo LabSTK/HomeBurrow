@@ -15,9 +15,8 @@ import kotlinx.coroutines.launch
 data class GroupsUiState(
     val isLoading: Boolean = false,
     val groups: List<GroupSummaryResponse> = emptyList(),
-    val selectedGroup: GroupDetailResponse? = null,
-    val members: List<GroupMemberResponse> = emptyList(),
-    val isLocationsOpen: Boolean = false,
+    val groupDetailsById: Map<String, GroupDetailResponse> = emptyMap(),
+    val groupMembersByGroupId: Map<String, List<GroupMemberResponse>> = emptyMap(),
     val error: String? = null,
     val info: String? = null,
 )
@@ -34,13 +33,12 @@ class GroupsViewModel(
         viewModelScope.launch {
             groupsRepository.listGroups().fold(
                 onSuccess = { groups ->
-                    val selected = _state.value.selectedGroup
-                    val selectedStillVisible = selected != null && groups.any { it.id == selected.id }
+                    val visibleGroupIds = groups.map { it.id }.toSet()
                     _state.value = _state.value.copy(
                         isLoading = false,
                         groups = groups,
-                        selectedGroup = if (selectedStillVisible) selected else null,
-                        members = if (selectedStillVisible) _state.value.members else emptyList(),
+                        groupDetailsById = _state.value.groupDetailsById.filterKeys { it in visibleGroupIds },
+                        groupMembersByGroupId = _state.value.groupMembersByGroupId.filterKeys { it in visibleGroupIds },
                         error = null,
                     )
                 },
@@ -54,7 +52,7 @@ class GroupsViewModel(
         }
     }
 
-    fun createGroup(name: String) {
+    fun createGroup(name: String, onCreated: (String) -> Unit = {}) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) {
             _state.value = _state.value.copy(error = "Group name is required.", info = null)
@@ -65,9 +63,13 @@ class GroupsViewModel(
         viewModelScope.launch {
             groupsRepository.createGroup(trimmed).fold(
                 onSuccess = { created ->
-                    _state.value = _state.value.copy(info = "Group created.")
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        groupDetailsById = _state.value.groupDetailsById + (created.id to created),
+                        info = "Group created.",
+                    )
+                    onCreated(created.id)
                     loadGroups()
-                    openGroup(created.id)
                 },
                 onFailure = { error ->
                     _state.value = _state.value.copy(
@@ -79,16 +81,15 @@ class GroupsViewModel(
         }
     }
 
-    fun openGroup(groupId: String) {
+    fun loadGroup(groupId: String) {
         _state.value = _state.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
             fetchGroupAndMembers(groupId).fold(
                 onSuccess = { (group, members) ->
                     _state.value = _state.value.copy(
                         isLoading = false,
-                        selectedGroup = group,
-                        members = members,
-                        isLocationsOpen = false,
+                        groupDetailsById = _state.value.groupDetailsById + (group.id to group),
+                        groupMembersByGroupId = _state.value.groupMembersByGroupId + (group.id to members),
                         error = null,
                     )
                 },
@@ -102,28 +103,7 @@ class GroupsViewModel(
         }
     }
 
-    fun closeGroup() {
-        _state.value = _state.value.copy(
-            selectedGroup = null,
-            members = emptyList(),
-            isLocationsOpen = false,
-            error = null,
-            info = null,
-        )
-    }
-
-    fun openLocations() {
-        if (_state.value.selectedGroup != null) {
-            _state.value = _state.value.copy(isLocationsOpen = true, error = null, info = null)
-        }
-    }
-
-    fun closeLocations() {
-        _state.value = _state.value.copy(isLocationsOpen = false, error = null, info = null)
-    }
-
-    fun addMember(userId: String, role: String) {
-        val group = _state.value.selectedGroup ?: return
+    fun addMember(groupId: String, userId: String, role: String) {
         val trimmedUserId = userId.trim()
         val normalizedRole = role.lowercase()
 
@@ -138,10 +118,10 @@ class GroupsViewModel(
 
         _state.value = _state.value.copy(isLoading = true, error = null, info = null)
         viewModelScope.launch {
-            groupsRepository.addMember(group.id, trimmedUserId, normalizedRole).fold(
+            groupsRepository.addMember(groupId, trimmedUserId, normalizedRole).fold(
                 onSuccess = {
                     _state.value = _state.value.copy(info = "Member added.")
-                    refreshSelectedGroup()
+                    loadGroup(groupId)
                 },
                 onFailure = { error ->
                     _state.value = _state.value.copy(
@@ -153,14 +133,13 @@ class GroupsViewModel(
         }
     }
 
-    fun removeMember(userId: String) {
-        val group = _state.value.selectedGroup ?: return
+    fun removeMember(groupId: String, userId: String) {
         _state.value = _state.value.copy(isLoading = true, error = null, info = null)
         viewModelScope.launch {
-            groupsRepository.removeMember(group.id, userId).fold(
+            groupsRepository.removeMember(groupId, userId).fold(
                 onSuccess = {
                     _state.value = _state.value.copy(info = "Member removed.")
-                    refreshSelectedGroup()
+                    loadGroup(groupId)
                 },
                 onFailure = { error ->
                     _state.value = _state.value.copy(
@@ -178,30 +157,6 @@ class GroupsViewModel(
 
     fun resetState() {
         _state.value = GroupsUiState()
-    }
-
-    private suspend fun refreshSelectedGroup() {
-        val groupId = _state.value.selectedGroup?.id ?: run {
-            _state.value = _state.value.copy(isLoading = false)
-            return
-        }
-        fetchGroupAndMembers(groupId).fold(
-            onSuccess = { (group, members) ->
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        selectedGroup = group,
-                        members = members,
-                        isLocationsOpen = _state.value.isLocationsOpen,
-                        error = null,
-                    )
-                },
-            onFailure = { error ->
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = toMessage(error),
-                )
-            },
-        )
     }
 
     private suspend fun fetchGroupAndMembers(groupId: String): Result<Pair<GroupDetailResponse, List<GroupMemberResponse>>> {
@@ -224,3 +179,4 @@ class GroupsViewModel(
             else -> error.message ?: "Request failed."
         }
 }
+
