@@ -26,6 +26,7 @@ import androidx.navigation.navArgument
 import dev.labstk.homeburrow.auth.AuthState
 import dev.labstk.homeburrow.auth.ChangePasswordScreen
 import dev.labstk.homeburrow.auth.LoginScreen
+import dev.labstk.homeburrow.chat.GroupChatRoute
 import dev.labstk.homeburrow.di.AppModule
 import dev.labstk.homeburrow.files.GroupFilesRoute
 import dev.labstk.homeburrow.groups.GroupDetailRoute
@@ -71,6 +72,7 @@ fun App(appModule: AppModule) {
                     onLogout = {
                         appModule.groupsViewModel.resetState()
                         appModule.locationsViewModel.resetState()
+                        appModule.chatViewModel.resetState()
                         appModule.filesViewModel.resetState()
                         authViewModel.logout()
                     },
@@ -118,8 +120,8 @@ fun App(appModule: AppModule) {
                 arguments = listOf(navArgument(GroupRoutes.groupIdArg) { type = NavType.StringType }),
             ) { entry ->
                 val groupId = entry.stringArg(GroupRoutes.groupIdArg) ?: return@composable
-                GroupFeaturePlaceholderScreen(
-                    title = "Chat",
+                GroupChatRoute(
+                    viewModel = appModule.chatViewModel,
                     groupId = groupId,
                     onBack = { navController.popBackStack() },
                 )
@@ -143,6 +145,7 @@ fun App(appModule: AppModule) {
                     onLogout = {
                         appModule.groupsViewModel.resetState()
                         appModule.locationsViewModel.resetState()
+                        appModule.chatViewModel.resetState()
                         appModule.filesViewModel.resetState()
                         authViewModel.logout()
                     },
@@ -179,28 +182,6 @@ fun App(appModule: AppModule) {
 private fun NavBackStackEntry.stringArg(name: String): String? {
     val args = arguments ?: return null
     return NavType.StringType[args, name]
-}
-
-@Composable
-private fun GroupFeaturePlaceholderScreen(
-    title: String,
-    groupId: String,
-    onBack: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text("$title for this group is coming soon.", style = MaterialTheme.typography.titleMedium)
-        Text("Group ID: $groupId", style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onBack) {
-            Text("Back")
-        }
-    }
 }
 
 @Composable

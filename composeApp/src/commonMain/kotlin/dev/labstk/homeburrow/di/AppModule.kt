@@ -3,6 +3,8 @@ package dev.labstk.homeburrow.di
 import dev.labstk.homeburrow.auth.AuthRepository
 import dev.labstk.homeburrow.auth.AuthViewModel
 import dev.labstk.homeburrow.auth.TokenStorage
+import dev.labstk.homeburrow.chat.ChatRepository
+import dev.labstk.homeburrow.chat.ChatViewModel
 import dev.labstk.homeburrow.files.DownloadedFileOpener
 import dev.labstk.homeburrow.files.FilesRepository
 import dev.labstk.homeburrow.files.FilesViewModel
@@ -67,7 +69,15 @@ class AppModule(
         FilesRepository(httpClient)
     }
 
+    val chatRepository by lazy {
+        ChatRepository(httpClient)
+    }
+
     val filesViewModel by lazy {
         FilesViewModel(filesRepository, filePicker, downloadedFileOpener)
+    }
+
+    val chatViewModel by lazy {
+        ChatViewModel(chatRepository)
     }
 }

@@ -28,6 +28,11 @@ from app.schemas.location import (
     SetLocationSharingRequest,
 )
 from app.schemas.file import GroupFileResponse
+from app.schemas.chat import (
+    GroupMessageResponse,
+    ListGroupMessagesResponse,
+    SendGroupMessageRequest,
+)
 
 __all__ = [
     "ErrorResponse",
@@ -51,6 +56,9 @@ __all__ = [
     "SetLocationSharingRequest",
     "LocationSharingResponse",
     "GroupFileResponse",
+    "SendGroupMessageRequest",
+    "GroupMessageResponse",
+    "ListGroupMessagesResponse",
 ]
 
 
