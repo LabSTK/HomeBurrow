@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     STORAGE_PATH: str
+    MAX_UPLOAD_BYTES: int = 25 * 1024 * 1024
 
     class Config:
         env_file = ".env"

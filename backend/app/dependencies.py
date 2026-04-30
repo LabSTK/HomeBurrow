@@ -1,3 +1,4 @@
+from functools import lru_cache
 from collections.abc import AsyncGenerator
 
 from fastapi import Depends, HTTPException, Request, status
@@ -10,6 +11,8 @@ from app.config import settings
 from app.database import async_session
 from app.models.user import User
 from app.schemas import ErrorResponse
+from app.storage.base import StorageService
+from app.storage.local import LocalStorageService
 
 _bearer = HTTPBearer()
 
@@ -22,6 +25,15 @@ EXEMPT_FROM_PASSWORD_CHANGE = {
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
+
+
+@lru_cache
+def _get_storage_service() -> StorageService:
+    return LocalStorageService()
+
+
+def get_storage() -> StorageService:
+    return _get_storage_service()
 
 
 async def get_current_user(

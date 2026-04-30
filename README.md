@@ -78,6 +78,7 @@ uvicorn app.main:app --reload
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime | `15` |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime | `30` |
 | `STORAGE_PATH` | Path for uploaded file storage | `/app/storage_data` |
+| `MAX_UPLOAD_BYTES` | Max upload size for group file uploads | `26214400` |
 
 ---
 

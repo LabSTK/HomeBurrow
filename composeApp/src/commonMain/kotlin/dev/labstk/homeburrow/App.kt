@@ -27,6 +27,7 @@ import dev.labstk.homeburrow.auth.AuthState
 import dev.labstk.homeburrow.auth.ChangePasswordScreen
 import dev.labstk.homeburrow.auth.LoginScreen
 import dev.labstk.homeburrow.di.AppModule
+import dev.labstk.homeburrow.files.GroupFilesRoute
 import dev.labstk.homeburrow.groups.GroupDetailRoute
 import dev.labstk.homeburrow.groups.GroupLocationsRoute
 import dev.labstk.homeburrow.groups.GroupsListRoute
@@ -70,6 +71,7 @@ fun App(appModule: AppModule) {
                     onLogout = {
                         appModule.groupsViewModel.resetState()
                         appModule.locationsViewModel.resetState()
+                        appModule.filesViewModel.resetState()
                         authViewModel.logout()
                     },
                 )
@@ -128,8 +130,8 @@ fun App(appModule: AppModule) {
                 arguments = listOf(navArgument(GroupRoutes.groupIdArg) { type = NavType.StringType }),
             ) { entry ->
                 val groupId = entry.stringArg(GroupRoutes.groupIdArg) ?: return@composable
-                GroupFeaturePlaceholderScreen(
-                    title = "Files",
+                GroupFilesRoute(
+                    viewModel = appModule.filesViewModel,
                     groupId = groupId,
                     onBack = { navController.popBackStack() },
                 )
@@ -141,6 +143,7 @@ fun App(appModule: AppModule) {
                     onLogout = {
                         appModule.groupsViewModel.resetState()
                         appModule.locationsViewModel.resetState()
+                        appModule.filesViewModel.resetState()
                         authViewModel.logout()
                     },
                 )

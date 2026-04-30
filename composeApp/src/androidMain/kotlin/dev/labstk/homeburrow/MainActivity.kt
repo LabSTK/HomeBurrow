@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import dev.labstk.homeburrow.auth.AndroidTokenStorage
 import dev.labstk.homeburrow.di.AppModule
+import dev.labstk.homeburrow.files.AndroidDownloadedFileOpener
+import dev.labstk.homeburrow.files.AndroidLocalFilePicker
 import dev.labstk.homeburrow.locations.AndroidDeviceLocationProvider
 import dev.labstk.homeburrow.locations.AndroidMapLauncher
 import dev.labstk.homeburrow.locations.hasLocationPermission
@@ -21,6 +23,8 @@ class MainActivity : ComponentActivity() {
             tokenStorage = AndroidTokenStorage(applicationContext),
             deviceLocationProvider = AndroidDeviceLocationProvider(applicationContext),
             mapLauncher = AndroidMapLauncher(applicationContext),
+            filePicker = AndroidLocalFilePicker(this),
+            downloadedFileOpener = AndroidDownloadedFileOpener(applicationContext),
         )
     }
 

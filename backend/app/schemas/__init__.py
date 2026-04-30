@@ -27,6 +27,7 @@ from app.schemas.location import (
     PostCurrentLocationRequest,
     SetLocationSharingRequest,
 )
+from app.schemas.file import GroupFileResponse
 
 __all__ = [
     "ErrorResponse",
@@ -49,6 +50,7 @@ __all__ = [
     "CurrentLocationResponse",
     "SetLocationSharingRequest",
     "LocationSharingResponse",
+    "GroupFileResponse",
 ]
 
 

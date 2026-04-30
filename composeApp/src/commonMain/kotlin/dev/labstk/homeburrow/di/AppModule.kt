@@ -3,6 +3,10 @@ package dev.labstk.homeburrow.di
 import dev.labstk.homeburrow.auth.AuthRepository
 import dev.labstk.homeburrow.auth.AuthViewModel
 import dev.labstk.homeburrow.auth.TokenStorage
+import dev.labstk.homeburrow.files.DownloadedFileOpener
+import dev.labstk.homeburrow.files.FilesRepository
+import dev.labstk.homeburrow.files.FilesViewModel
+import dev.labstk.homeburrow.files.LocalFilePicker
 import dev.labstk.homeburrow.groups.GroupsRepository
 import dev.labstk.homeburrow.groups.GroupsViewModel
 import dev.labstk.homeburrow.locations.DeviceLocationProvider
@@ -28,6 +32,8 @@ class AppModule(
     val tokenStorage: TokenStorage,
     private val deviceLocationProvider: DeviceLocationProvider,
     private val mapLauncher: MapLauncher,
+    private val filePicker: LocalFilePicker,
+    private val downloadedFileOpener: DownloadedFileOpener,
 ) {
     val httpClient by lazy {
         createHttpClient(baseUrl, engineFactory, tokenStorage)
@@ -55,5 +61,13 @@ class AppModule(
 
     val locationsViewModel by lazy {
         LocationsViewModel(locationsRepository, deviceLocationProvider, mapLauncher)
+    }
+
+    val filesRepository by lazy {
+        FilesRepository(httpClient)
+    }
+
+    val filesViewModel by lazy {
+        FilesViewModel(filesRepository, filePicker, downloadedFileOpener)
     }
 }
