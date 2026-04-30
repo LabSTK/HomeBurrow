@@ -82,6 +82,68 @@ uvicorn app.main:app --reload
 
 ---
 
+## Self-hosting deployment notes
+
+### Startup + migration behavior
+
+The API container runs `backend/entrypoint.sh`, which executes:
+
+```sh
+alembic upgrade head
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+This means migrations are applied automatically on API startup. If a migration fails, the API container will not finish booting.
+
+### Data persistence and storage volume
+
+`docker-compose.yml` persists app data in named Docker volumes:
+
+| Volume | Contents |
+|---|---|
+| `postgres_data` | PostgreSQL database data directory |
+| `storage_data` | Uploaded files (mounted at `/app/storage_data`) |
+
+`docker-compose down` keeps these volumes. `docker-compose down -v` deletes them (data loss).
+
+### Reverse proxy + HTTPS
+
+For any non-local deployment, put a reverse proxy (Nginx, Caddy, Traefik, etc.) in front of the API:
+
+1. Terminate TLS at the proxy (`https://...` for client traffic).
+2. Forward traffic to HomeBurrow API on internal network (`api:8000`).
+3. Expose only proxy ports publicly (typically 80/443), not Postgres.
+4. Keep database reachable only from trusted internal containers/networks.
+
+### Backup and restore
+
+Create backups from the project root:
+
+```sh
+mkdir -p backups
+docker-compose exec -T db pg_dump -U homeburrow -d homeburrow > backups/homeburrow.sql
+docker-compose exec -T api sh -c "tar czf - -C /app/storage_data ." > backups/storage_data.tgz
+```
+
+Restore backups (stop clients/API writes first):
+
+```sh
+cat backups/homeburrow.sql | docker-compose exec -T db psql -U homeburrow -d homeburrow
+cat backups/storage_data.tgz | docker-compose exec -T api sh -c "rm -rf /app/storage_data/* && tar xzf - -C /app/storage_data"
+```
+
+### Deployment safety defaults
+
+Before exposing the service beyond local development:
+
+1. Set a strong random `SECRET_KEY`.
+2. Change default database credentials in `.env` / `docker-compose.yml`.
+3. Do not expose Postgres (`5432`) on public interfaces.
+4. Keep `.env` private and never commit it.
+5. Use HTTPS at the reverse proxy.
+
+---
+
 ## Mobile app
 
 ### Build and run Android
@@ -93,6 +155,15 @@ uvicorn app.main:app --reload
 ### Build and run iOS
 
 Open `iosApp/` in Xcode and run, or use the IDE run configuration.
+
+### API base URL for self-hosted servers
+
+The mobile clients have development defaults and must be updated for your deployment URL:
+
+| Platform | Current location | Current default | What to set for self-hosting |
+|---|---|---|---|
+| Android | `composeApp/build.gradle.kts` (`API_BASE_URL`) | `http://10.0.2.2:8000` | Your LAN IP or domain (prefer `https://...`) |
+| iOS | `composeApp/src/iosMain/kotlin/dev/labstk/homeburrow/MainViewController.kt` (`baseUrl`) | `http://localhost:8000` | Your LAN IP or domain (prefer `https://...`) |
 
 ---
 
